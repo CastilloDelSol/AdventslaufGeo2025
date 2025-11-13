@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hexagon-Heatmap ### Ratzeburger Adventslauf 2025</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .legend {
+      background: white;
+      padding: 10px;
+      line-height: 18px;
+      border-radius: 5px;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.8;
+      border-radius: 3px;
+    }
+
+    /* Dark mode button */
+    .dark-toggle {
+      background: white;
+      padding: 6px 10px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 5px;
+      font-size: 13px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .dark-toggle:hover {
+      background: #eee;
+    }
+
+    /* Layer control tweaks */
+    .leaflet-control-layers-expanded {
+      font-size: 14px;
+    }
+    .leaflet-control-layers-selector {
+      width: 16px;
+      height: 16px;
+    }
+
+    .leaflet-tooltip {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* --- Mobile tweaks --- */
+    @media (max-width: 600px) {
+      .legend {
+        font-size: 16px;
+        padding: 12px;
+      }
+      .dark-toggle {
+        font-size: 15px;
+        padding: 8px 12px;
+      }
+      .leaflet-control-layers-expanded {
+        font-size: 16px;
+      }
+      .leaflet-control-layers-selector {
+        width: 18px;
+        height: 18px;
+      }
+      .leaflet-tooltip {
+        font-size: 15px;
+      }
+    }
+	
+	/* Statistics box */
+	.stats-box {
+	  position: absolute;
+	  bottom: 20px;
+	  left: 20px;
+	  background: white;
+	  padding: 12px;
+	  border-radius: 8px;
+	  font-size: 14px;
+	  line-height: 18px;
+	  max-width: 260px;
+	  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+	  z-index: 9999;
+	}
+
+	.stats-box h3 {
+	  margin: 0 0 6px 0;
+	  font-size: 15px;
+	}
+
+	.stats-box a {
+	  color: #0078ff;
+	  cursor: pointer;
+	}
+
+	@media (max-width: 600px) {
+	  .stats-box {
+		font-size: 16px;
+		line-height: 20px;
+		max-width: 320px;
+		padding: 16px;
+	  }
+	}
+
+  </style>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="stats" class="stats-box">Loading statistics…</div>
+<script>
+// ------------------------------------------------------------
+// BASIC SETUP
+// ------------------------------------------------------------
+const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+// Center on start line; zoom ~8 ≈ ~200 km diameter
+const map = L.map('map').setView([53.699327, 10.774143], 8);
+
+
+// ------------------------------------------------------------
+// LIGHT TILE LAYER (default)
+// ------------------------------------------------------------
+const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+
+// ------------------------------------------------------------
+// DARK TILE LAYER (toggleable)
+// ------------------------------------------------------------
+const darkTiles = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  {
+    attribution: '&copy; OpenStreetMap & CARTO',
+    maxZoom: 19
+  }
+);
+
+let darkMode = false;
+
+
+// ------------------------------------------------------------
+// DARK MODE BUTTON (top-left, next to zoom)
+// ------------------------------------------------------------
+const darkButton = L.control({position: 'topleft'});
+darkButton.onAdd = function() {
+  const div = L.DomUtil.create('div', 'dark-toggle');
+  div.innerHTML = "Dark Mode";
+  div.onclick = () => {
+    if (!darkMode) {
+      map.removeLayer(lightTiles);
+      darkTiles.addTo(map);
+      darkMode = true;
+      div.innerHTML = "Light Mode";
+    } else {
+      map.removeLayer(darkTiles);
+      lightTiles.addTo(map);
+      darkMode = false;
+      div.innerHTML = "Dark Mode";
+    }
+  };
+  return div;
+};
+darkButton.addTo(map);
+
+
+// ------------------------------------------------------------
+// COLOR SCALE – Viridis INVERTED
+// high count = dark purple, low = bright yellow
+// ------------------------------------------------------------
+function getColor(count) {
+  // Breaks: 0, 1–2, 3–4, 5–9, 10–14, 15–24, 25+
+  return count > 25 ? '#440154' :  // darkest
+         count > 15 ? '#482777' :
+         count > 10 ? '#3E4989' :
+         count > 5  ? '#31688E' :
+         count > 3  ? '#26828E' :
+         count > 1  ? '#1F9E89' :
+         count > 0  ? '#35B779' :
+                      '#FDE725';   // lowest / zero
+}
+
+function style(feature) {
+  return {
+    fillColor: getColor(feature.properties.count),
+    weight: isMobile ? 2.0 : 1.2,   // thicker borders on mobile
+    opacity: 0.9,
+    color: '#222',
+    fillOpacity: isMobile ? 0.5 : 0.4
+  };
+}
+
+
+// ------------------------------------------------------------
+// LAYER GROUPS – only r7 & r8
+// ------------------------------------------------------------
+const layers = {
+  "Resolution 7": L.layerGroup(),
+  "Resolution 8": L.layerGroup()
+};
+
+const resolutionFiles = {
+  "Resolution 7": "hexagons_r7.geojson",
+  "Resolution 8": "hexagons_r8.geojson"
+};
+
+
+// ------------------------------------------------------------
+// LOAD GEOJSON LAYERS
+// ------------------------------------------------------------
+for (const [name, file] of Object.entries(resolutionFiles)) {
+  fetch(file)
+    .then(r => r.json())
+    .then(data => {
+
+      const layer = L.geoJSON(data, {
+        style: style,
+        onEachFeature: function(feature, layer) {
+          layer.bindTooltip(`Count: ${feature.properties.count}`, {
+            sticky: true
+          });
+        }
+      });
+
+      layer.addTo(layers[name]);
+
+      // Default: Resolution 7 visible, 8 off
+      if (name === "Resolution 7") {
+        layers[name].addTo(map);
+      }
+    })
+    .catch(err => console.error("Error loading", file, err));
+}
+
+
+// ------------------------------------------------------------
+// PERMANENTLY OPEN LAYER SWITCHER (top-right)
+// ------------------------------------------------------------
+const switcher = L.control.layers(null, layers, {
+  collapsed: false
+});
+switcher.addTo(map);
+
+
+// ------------------------------------------------------------
+// LEGEND (bottom-right) – uses same breaks as getColor()
+// ------------------------------------------------------------
+const legend = L.control({ position: "bottomright" });
+
+legend.onAdd = function () {
+  const div = L.DomUtil.create("div", "legend");
+  // Same break values as in getColor
+  const grades = [0, 1, 3, 5, 10, 15, 25];
+
+  div.innerHTML += "<b>Anmeldungen</b><br>";
+
+  for (let i = 0; i < grades.length; i++) {
+    const from = grades[i];
+    const to = grades[i + 1];
+
+    // pick a value in [from,to) for color sampling
+    const sample = (to ? from + 0.0001 : from + 30);
+    div.innerHTML +=
+      '<i style="background:' + getColor(sample) + '"></i> ' +
+      (to
+        ? from + (from + 1 === to ? '' : '&ndash;' + (to - 1))
+        : from + '+') +
+      '<br>';
+  }
+  return div;
+};
+
+legend.addTo(map);
+
+
+// ------------------------------------------------------------
+// LOAD STATISTICS AND DISPLAY BOX
+// ------------------------------------------------------------
+fetch("statistics.json")
+  .then(r => r.json())
+  .then(stats => {
+    const div = document.getElementById("stats");
+
+    // Helper: center map on top3 hexagon by h3 ID
+    function centerOnHex(h3id, zoom = 11) {
+      try {
+        const coords = h3.h3ToGeo(h3id); // Requires h3-js library
+        map.setView([coords[0], coords[1]], zoom);
+      } catch (e) {
+        console.warn("h3-js not loaded — fallback via points_r7.json");
+
+        // fallback: load points_r7.json and find the point manually
+        fetch("points_r7.json")
+          .then(r => r.json())
+          .then(points => {
+            for (const [lat, lon, count] of points) {
+              const id = h3.latLngToCell(lat, lon, 7);
+              if (id === h3id) {
+                map.setView([lat, lon], zoom);
+                break;
+              }
+            }
+          });
+      }
+    }
+
+    // Build HTML
+    let html = `
+      <h3>Statistik</h3>
+      <b>Teilnehmer:</b> ${stats.total_participants}<br>
+      <b>Distanz min:</b> ${stats.distance_min_km} km<br>
+      <b>Distanz max:</b> ${stats.distance_max_km} km<br>
+      <b>Distanz Ø:</b> ${stats.distance_avg_km} km<br>
+      <b>Median:</b> ${stats.distance_median_km} km<br>
+      <br>
+      <b>Distanz-Buckets:</b><br>
+    `;
+
+    for (const [bucket, val] of Object.entries(stats.distance_buckets)) {
+      html += `${bucket}: <b>${val}</b><br>`;
+    }
+
+    html += `<br><b>Top-3 Hotspots (r7):</b><br>`;
+
+    stats.top3_hexagons_r7.forEach((hx, i) => {
+      html += `
+        <a onclick="centerOnHex('${hx.h3_id}')">
+          #${i+1} – ${hx.count} Teilnehmer
+        </a><br>
+      `;
+    });
+
+    div.innerHTML = html;
+
+    // expose function globally
+    window.centerOnHex = centerOnHex;
+  })
+  .catch(err => {
+    console.error("statistics.json not found", err);
+    document.getElementById("stats").innerHTML =
+      "Keine Statistikdaten gefunden.";
+  });
+</script>
+</body>
+</html>
