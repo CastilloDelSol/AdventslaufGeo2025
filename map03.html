@@ -15,6 +15,12 @@
       padding: 0;
     }
 
+    /* Globale Schriftart (gleich wie Leaflet / System UI) */
+    body, .legend, .stats-box, .dark-toggle, .leaflet-container {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Helvetica, Arial, sans-serif;
+    }
+
     /* ----------------------------- */
     /* Legend (rechts unten)        */
     /* ----------------------------- */
@@ -86,6 +92,10 @@
       color: #0078ff;
       cursor: pointer;
       font-weight: 600;
+      text-decoration: none;
+    }
+    .stats-box a:hover {
+      text-decoration: underline;
     }
 
     /* Mobile */
@@ -102,7 +112,6 @@
 
 <body>
 <div id="map"></div>
-
 <div id="stats" class="stats-box">Lade Statistik…</div>
 
 <script>
@@ -128,7 +137,6 @@ const darkTiles = L.tileLayer(
 );
 
 let darkMode = false;
-
 
 // Dark Mode Switch
 const darkButton = L.control({position: 'topleft'});
@@ -199,9 +207,9 @@ for (const [name, file] of Object.entries(resolutionFiles)) {
       });
       layer.addTo(layers[name]);
       if (name === "Auflösung 7") layers[name].addTo(map);
-    });
+    })
+    .catch(err => console.error("Error loading", file, err));
 }
-
 
 // Layer Switcher
 L.control.layers(null, layers, { collapsed:false }).addTo(map);
@@ -248,9 +256,7 @@ fetch("statistics.json")
       } catch(e) { console.error(e); }
     };
 
-    const tbl = `
-      <h3 style="margin:0 0 6px 0;">Statistik</h3>
-
+    const tableMain = `
       <table>
         <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
         <tr><td class="label">Distanz min:</td><td>${stats.distance_min_km} km</td></tr>
@@ -258,27 +264,34 @@ fetch("statistics.json")
         <tr><td class="label">Ø Distanz:</td><td>${stats.distance_avg_km} km</td></tr>
         <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
       </table>
+    `;
 
-      <br><b>Distanz-Buckets:</b>
+    const tableBuckets = `
       <table>
         ${Object.entries(stats.distance_buckets)
           .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
           .join("")}
       </table>
-
-      <br><b>Top-3 Hotspots (r7):</b><br>
-      ${stats.top3_hexagons_r7.map((hx,i)=>
-        `<a onclick="centerOnHex('${hx.h3_id}')">#${i+1} – ${hx.count} Teilnehmer</a><br>`
-      ).join("")}
     `;
 
-    box.innerHTML = tbl;
+    const top3 = stats.top3_hexagons_r7.map((hx,i)=>
+      `<a onclick="centerOnHex('${hx.h3_id}')">#${i+1} – ${hx.count} Teilnehmer</a><br>`
+    ).join("");
+
+    box.innerHTML = `
+      <h3 style="margin:0 0 6px 0;">Statistik</h3>
+      ${tableMain}
+      <br><b>Distanz-Buckets:</b>
+      ${tableBuckets}
+      <br><b>Top-3 Hotspots (r7):</b><br>
+      ${top3}
+    `;
   })
   .catch(() => {
-    document.getElementById("stats").innerHTML = "Keine Statistikdaten gefunden.";
+    document.getElementById("stats").innerHTML =
+      "Keine Statistikdaten gefunden.";
   });
 
 </script>
-
 </body>
 </html>
