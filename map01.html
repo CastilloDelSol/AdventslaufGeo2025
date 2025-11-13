@@ -37,7 +37,7 @@
 // ------------------------------------------------------------
 // BASE MAP
 // ------------------------------------------------------------
-const map = L.map('map').setView([53.699288, 10.774134], 8);
+const map = L.map('map').setView([53.699288, 10.774134], 12);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -49,11 +49,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // COLOR SCALE
 // ------------------------------------------------------------
 function getColor(count) {
-  return count > 20 ? '#800026' :
-         count > 10 ? '#BD0026' :
-         count > 5  ? '#E31A1C' :
-         count > 2  ? '#FD8D3C' :
-         count > 1  ? '#FEB24C' :
+  return count > 50 ? '#800026' :
+         count > 20 ? '#BD0026' :
+         count > 10  ? '#E31A1C' :
+         count > 5  ? '#FD8D3C' :
+         count > 2  ? '#FEB24C' :
          count > 0  ? '#FED976' :
                       '#FFEDA0';
 }
@@ -64,7 +64,7 @@ function style(feature) {
     weight: 1,
     opacity: 0.7,
     color: '#333',
-    fillOpacity: 0.55
+    fillOpacity: 0.4
   };
 }
 
@@ -129,8 +129,8 @@ const legend = L.control({ position: "bottomright" });
 
 legend.onAdd = function () {
   const div = L.DomUtil.create("div", "legend");
-  const grades = [0, 1, 2, 5, 10, 20];
-  div.innerHTML += "<b>Teilnehmer pro Hexagon</b><br>";
+  const grades = [0, 2, 5, 10, 20, 50];
+  div.innerHTML += "<b>Meldungen pro Hexagon</b><br>";
 
   for (let i = 0; i < grades.length; i++) {
     div.innerHTML +=
@@ -164,7 +164,7 @@ fetch("statistics.json")
   .then(r => r.json())
   .then(stats => {
     console.log("Statistics loaded:", stats);
-    // You can display this in a sidebar or popup later
+    // display this in a sidebar or popup later
   })
   .catch(e => console.log("No statistics.json yet → OK"));
 </script>
