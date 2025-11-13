@@ -15,7 +15,6 @@
         display:grid; gap:18px;
         grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
     }
-
     .kpi {
         background:white; border-radius:10px;
         padding:18px; text-align:center;
@@ -26,17 +25,20 @@
 
     h2 { margin-top:40px; font-size:24px; }
 
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    td { padding:8px 4px; border-bottom:1px solid #ddd; }
-    td:first-child { font-weight:600; }
-
     .chart-card {
         background:white; padding:20px; border-radius:10px;
         box-shadow:0 2px 8px rgba(0,0,0,0.12); margin-top:20px;
     }
 
-    .hotspot { background:white; padding:16px; border-radius:10px;
+    .hotspot {
+        background:white; padding:16px; border-radius:10px;
         box-shadow:0 2px 8px rgba(0,0,0,0.12);
+        margin-top:20px;
+    }
+
+    @media (max-width:600px){
+        header { font-size:22px; padding:16px; }
+        .kpi-value { font-size:22px; }
     }
 </style>
 </head>
@@ -47,11 +49,10 @@
 
 <div class="container">
 
+    <!-- KPIs -->
     <div id="kpis" class="kpi-grid"></div>
 
     <h2>Distanzen nach Kategorien</h2>
-    <div id="buckets"></div>
-
     <div class="chart-card">
         <canvas id="bucketBar"></canvas>
     </div>
@@ -66,7 +67,7 @@
         <canvas id="directionBuckets"></canvas>
     </div>
 
-    <h2>Top-3 Hexagon-Hotspots</h2>
+    <h2>Top-3 Hexagon-Hotspots (r7)</h2>
     <div id="hotspots" class="hotspot"></div>
 
 </div>
@@ -88,26 +89,24 @@ fetch("statistics.json")
         <div class="kpi"><div class="kpi-title">Median</div><div class="kpi-value">${stats.distance_median_km} km</div></div>
     `;
 
-    // ------------------- BUCKET TABLE ---------------------
-    const bucketTable = Object.entries(stats.distance_buckets)
-      .map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
-      .join("");
+    // ------------------- GLOBAL BUCKET BAR CHART -----------------
+    const bucketLabels = Object.keys(stats.distance_buckets);
+    const bucketValues = Object.values(stats.distance_buckets);
 
-    document.getElementById("buckets").innerHTML = `<table>${bucketTable}</table>`;
-
-    // ------------------- BUCKET BAR CHART -----------------
     new Chart(document.getElementById("bucketBar"), {
         type:"bar",
         data:{
-            labels:Object.keys(stats.distance_buckets),
+            labels:bucketLabels,
             datasets:[{
                 label:"Teilnehmer",
-                data:Object.values(stats.distance_buckets),
+                data:bucketValues,
                 backgroundColor:"rgba(20,60,160,0.55)",
                 borderRadius:4
             }]
         },
-        options:{ scales:{ y:{beginAtZero:true} } }
+        options:{
+            scales:{ y:{beginAtZero:true} }
+        }
     });
 
     // ------------------- WIND ROSE -------------------------
@@ -137,35 +136,39 @@ fetch("statistics.json")
         }
     });
 
-    // ------------------- CALCULATE PER-DIRECTION BUCKETS ---
-    const rawDistances = stats.raw_distances;      // add in stats.json
-    const rawDirections = stats.raw_directions;    // add in stats.json
+    // ------------------- PER-DIRECTION BUCKETS -------------------
+    const rawDistances  = stats.raw_distances  || [];
+    const rawDirections = stats.raw_directions || [];
 
-    // Build bucket sets per direction
-    function computeBuckets(dir) {
-        const ranges = {
-            "<10 km":0, "10-25 km":0, "25-50 km":0,
-            "50-100 km":0, "100-250 km":0, ">250 km":0
+    // Hilfsfunktion: Buckets für EINE Richtung berechnen
+    function computeBucketsForDirection(dir) {
+        const buckets = {
+            "<10 km":0,
+            "10-25 km":0,
+            "25-50 km":0,
+            "50-100 km":0,
+            "100-250 km":0,
+            ">250 km":0
         };
 
-        rawDistances.forEach((d,i)=>{
-            if (rawDirections[i] !== dir) return;
-            if (d < 10) ranges["<10 km"]++;
-            else if (d < 25) ranges["10-25 km"]++;
-            else if (d < 50) ranges["25-50 km"]++;
-            else if (d < 100) ranges["50-100 km"]++;
-            else if (d < 250) ranges["100-250 km"]++;
-            else ranges[">250 km"]++;
-        });
-
-        return ranges;
+        for (let i = 0; i < rawDistances.length; i++) {
+            if (rawDirections[i] !== dir) continue;
+            const d = rawDistances[i];
+            if (d < 10) buckets["<10 km"]++;
+            else if (d < 25) buckets["10-25 km"]++;
+            else if (d < 50) buckets["25-50 km"]++;
+            else if (d < 100) buckets["50-100 km"]++;
+            else if (d < 250) buckets["100-250 km"]++;
+            else buckets[">250 km"]++;
+        }
+        return buckets;
     }
 
-    // ------------------- DIRECTION CHART -------------------
+    // Chart-Instanz für die gewählte Richtung
     let directionChart = null;
 
     function showBucketsForDirection(dir) {
-        const data = computeBuckets(dir);
+        const data = computeBucketsForDirection(dir);
         const labels = Object.keys(data);
         const values = Object.values(data);
 
@@ -178,7 +181,7 @@ fetch("statistics.json")
                 datasets:[{
                     label:"Teilnehmer in Richtung " + dir,
                     data:values,
-                    backgroundColor:"rgba(0,140,70,0.6)",
+                    backgroundColor:"rgba(0,140,70,0.65)",
                     borderRadius:4
                 }]
             },
@@ -188,13 +191,26 @@ fetch("statistics.json")
         });
     }
 
+    // optional: initial irgend eine Richtung anzeigen (z.B. WSW oder N)
+    if (dirs.length > 0 && rawDistances.length > 0) {
+        showBucketsForDirection(dirs[0]);
+    }
+
     // ------------------- TOP 3 HOTSPOTS ---------------------
     document.getElementById("hotspots").innerHTML =
         stats.top3_hexagons_r7
-          .map((hx,i)=>`<b>#${i+1}</b> – ${hx.count} Teilnehmer<br><code>${hx.h3_id}</code><br><br>`)
+          .map((hx,i)=>`
+             <div>
+               <b>#${i+1}</b> – ${hx.count} Teilnehmer<br>
+               <code>${hx.h3_id}</code>
+             </div><br>
+          `)
           .join("");
 
-});
+  })
+  .catch(err => {
+    console.error("Fehler beim Laden von statistics.json:", err);
+  });
 </script>
 
 </body>
