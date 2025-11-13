@@ -1,9 +1,9 @@
 {
   "total_participants": 3004,
-  "distance_min_km": 0.092,
-  "distance_max_km": 2165.954,
+  "distance_min_km": 0.1,
+  "distance_max_km": 2166.0,
   "distance_avg_km": 49.5,
-  "distance_median_km": 30.308,
+  "distance_median_km": 30.3,
   "percentiles_km": {
     "0%": 0.092,
     "5%": 1.467,
@@ -197,4 +197,5 @@
       "count": 97
     }
   ]
+
 }
