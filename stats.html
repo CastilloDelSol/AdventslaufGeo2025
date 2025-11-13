@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Statistik – Ratzeburger Adventslauf</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #f5f6fa;
+        font-family: system-ui, sans-serif;
+        color: #222;
+    }
+
+    header {
+        background: #334;
+        color: white;
+        padding: 20px 40px;
+        font-size: 26px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 18px;
+        margin-bottom: 35px;
+    }
+
+    .kpi {
+        background: white;
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .kpi-title {
+        font-size: 14px;
+        opacity: 0.7;
+    }
+
+    .kpi-value {
+        font-size: 26px;
+        margin-top: 6px;
+        font-weight: 700;
+    }
+
+    /* Subsections */
+    h2 {
+        margin-top: 40px;
+        font-size: 24px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    td {
+        padding: 8px 4px;
+        border-bottom: 1px solid #ddd;
+    }
+    td:first-child {
+        font-weight: 600;
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        margin-top: 20px;
+    }
+
+    /* Top 3 */
+    .hotspot {
+        background: white;
+        padding: 16px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+        header { font-size: 22px; padding: 16px; }
+        .kpi-value { font-size: 22px; }
+    }
+</style>
+</head>
+
+<body>
+
+<header>Statistik – Ratzeburger Adventslauf</header>
+
+<div class="container">
+
+    <!-- KPIs -->
+    <div id="kpis" class="kpi-grid"></div>
+
+    <h2>Distanzen nach Kategorien</h2>
+    <div id="buckets"></div>
+
+    <h2>Wind-Rose (Richtungen)</h2>
+    <div class="chart-card">
+        <canvas id="windRose"></canvas>
+    </div>
+
+    <h2>Distanz-Verteilung</h2>
+    <div class="chart-card">
+        <canvas id="histogram"></canvas>
+    </div>
+
+    <h2>Top-3 Hexagon-Hotspots (r7)</h2>
+    <div id="hotspots" class="hotspot"></div>
+
+</div>
+
+<script>
+// -----------------------------------------
+// LOAD STATISTICS.JSON
+// -----------------------------------------
+fetch("statistics.json")
+  .then(r => r.json())
+  .then(stats => {
+    
+    // ---------------------------------
+    // KPI GRID
+    // ---------------------------------
+    const kpiDiv = document.getElementById("kpis");
+    kpiDiv.innerHTML = `
+      <div class="kpi"><div class="kpi-title">Teilnehmer</div><div class="kpi-value">${stats.total_participants}</div></div>
+      <div class="kpi"><div class="kpi-title">Distanz min</div><div class="kpi-value">${stats.distance_min_km} km</div></div>
+      <div class="kpi"><div class="kpi-title">Distanz max</div><div class="kpi-value">${stats.distance_max_km} km</div></div>
+      <div class="kpi"><div class="kpi-title">Ø Distanz</div><div class="kpi-value">${stats.distance_avg_km} km</div></div>
+      <div class="kpi"><div class="kpi-title">Median</div><div class="kpi-value">${stats.distance_median_km} km</div></div>
+    `;
+
+    // ---------------------------------
+    // DISTANCE BUCKET TABLE
+    // ---------------------------------
+    const bucketTable = Object.entries(stats.distance_buckets)
+      .map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
+      .join("");
+
+    document.getElementById("buckets").innerHTML = `
+        <table>${bucketTable}</table>
+    `;
+
+    // ---------------------------------
+    // WIND ROSE
+    // ---------------------------------
+    const directions = Object.keys(stats.wind_rose);
+    const values = Object.values(stats.wind_rose);
+
+    new Chart(document.getElementById("windRose"), {
+      type: "radar",
+      data: {
+        labels: directions,
+        datasets: [{
+          label: "Anzahl Teilnehmer",
+          data: values,
+          backgroundColor: "rgba(50,100,200,0.3)",
+          borderColor: "rgba(20,60,160,0.9)",
+          borderWidth: 2,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            beginAtZero: true,
+            ticks: { display:false },
+            grid: { color:"rgba(0,0,0,0.15)" }
+          }
+        }
+      }
+    });
+
+    // ---------------------------------
+    // HISTOGRAMM (Distanzverteilung)
+    // ---------------------------------
+    const percentiles = Object.values(stats.percentiles_km);
+
+    new Chart(document.getElementById("histogram"), {
+      type: "bar",
+      data: {
+        labels: Object.keys(stats.percentiles_km),
+        datasets: [{
+          label: "km",
+          data: percentiles,
+          backgroundColor: "rgba(0,140,70,0.6)",
+          borderRadius: 4
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero:true }
+        }
+      }
+    });
+
+    // ---------------------------------
+    // TOP-3 HOTSPOTS
+    // ---------------------------------
+    const top = stats.top3_hexagons_r7
+        .map((hx,i) => `
+            <div>
+              <b>#${i+1}</b> – ${hx.count} Teilnehmer<br>
+              <code>${hx.h3_id}</code>
+            </div><br>
+        `)
+        .join("");
+
+    document.getElementById("hotspots").innerHTML = top;
+
+  });
+</script>
+
+</body>
+</html>
