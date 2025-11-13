@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hexagon-Heatmap – Ratzeburger Adventslauf 2025</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Globale Schriftart (gleich wie Leaflet / System UI) */
+    body, .legend, .stats-box, .dark-toggle, .leaflet-container {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* ----------------------------- */
+    /* Legend (rechts unten)        */
+    /* ----------------------------- */
+    .legend {
+      background: white;
+      padding: 10px;
+      line-height: 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.85;
+      border-radius: 3px;
+    }
+
+    /* ----------------------------- */
+    /* Dark Mode Button              */
+    /* ----------------------------- */
+    .dark-toggle {
+      background: white;
+      padding: 6px 10px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 5px;
+      font-size: 14px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .dark-toggle:hover {
+      background: #eee;
+    }
+
+    /* ----------------------------- */
+    /* Statistics Box (links unten) */
+    /* ----------------------------- */
+    .stats-box {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 22px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      max-width: 300px;
+      z-index: 9900;
+    }
+
+    .stats-box table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .stats-box td {
+      padding: 1px 4px;
+      vertical-align: top;
+    }
+    .stats-box td.label {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .stats-box a {
+      color: #0078ff;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .stats-box a:hover {
+      text-decoration: underline;
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .stats-box {
+        font-size: 18px;
+        line-height: 24px;
+        max-width: 330px;
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="stats" class="stats-box">Lade Statistik…</div>
+
+<script>
+// ------------------------------------------------------------
+// MAP SETUP
+// ------------------------------------------------------------
+const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+// ------------------------------------------------------------
+// INITIAL MAP – forced center & zoom (never overridden)
+// ------------------------------------------------------------
+const map = L.map('map', {
+  preferCanvas: true,
+  inertia: false, // prevents auto-movement when layers load
+  center: [53.699327, 10.774143],
+  zoom: 10
+});
+
+
+// ------------------------------------------------------------
+// TILE LAYERS
+// ------------------------------------------------------------
+const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+const darkTiles = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  { maxZoom: 19 }
+);
+
+let darkMode = false;
+
+// Dark Mode Switch
+const darkButton = L.control({position: 'topleft'});
+darkButton.onAdd = function() {
+  const div = L.DomUtil.create('div', 'dark-toggle');
+  div.innerHTML = "Dark Mode";
+  div.onclick = () => {
+    if (!darkMode) {
+      map.removeLayer(lightTiles); darkTiles.addTo(map);
+      darkMode = true; div.innerHTML = "Light Mode";
+    } else {
+      map.removeLayer(darkTiles); lightTiles.addTo(map);
+      darkMode = false; div.innerHTML = "Dark Mode";
+    }
+  };
+  return div;
+};
+darkButton.addTo(map);
+
+
+// ------------------------------------------------------------
+// COLOR SCALE – Viridis INVERTED
+// ------------------------------------------------------------
+function getColor(count) {
+  return count > 25 ? '#440154' :
+         count > 15 ? '#482777' :
+         count > 10 ? '#3E4989' :
+         count > 5  ? '#31688E' :
+         count > 3  ? '#26828E' :
+         count > 1  ? '#1F9E89' :
+         count > 0  ? '#35B779' :
+                      '#FDE725';
+}
+
+function style(feature) {
+  return {
+    fillColor: getColor(feature.properties.count),
+    weight: isMobile ? 2.0 : 1.2,
+    opacity: 0.9,
+    color: '#222',
+    fillOpacity: isMobile ? 0.50 : 0.40
+  };
+}
+
+
+// ------------------------------------------------------------
+// LAYERS r7 + r8
+// ------------------------------------------------------------
+const layers = {
+  "Auflösung 7": L.layerGroup(),
+  "Auflösung 8": L.layerGroup()
+};
+
+const resolutionFiles = {
+  "Auflösung 7": "hexagons_r7.geojson",
+  "Auflösung 8": "hexagons_r8.geojson"
+};
+
+for (const [name, file] of Object.entries(resolutionFiles)) {
+  fetch(file)
+    .then(r => r.json())
+    .then(data => {
+      const layer = L.geoJSON(data, {
+        style,
+        onEachFeature: (feature, layer) => {
+          layer.bindTooltip(`Count: ${feature.properties.count}`, { sticky: true });
+        }
+      });
+      layer.addTo(layers[name]);
+      if (name === "Auflösung 7") layers[name].addTo(map);
+    })
+    .catch(err => console.error("Error loading", file, err));
+}
+
+// Layer Switcher
+L.control.layers(null, layers, { collapsed:false }).addTo(map);
+
+
+// ------------------------------------------------------------
+// LEGEND (rechts unten)
+// ------------------------------------------------------------
+const legend = L.control({ position: "bottomright" });
+legend.onAdd = function () {
+  const div = L.DomUtil.create("div", "legend");
+  const grades = [0, 1, 3, 5, 10, 15, 25];
+
+  div.innerHTML += "<b>Anmeldungen</b><br>";
+
+  for (let i = 0; i < grades.length; i++) {
+    const from = grades[i];
+    const to = grades[i + 1];
+    const sample = (to ? from+0.01 : from+100);
+
+    div.innerHTML +=
+      '<i style="background:' + getColor(sample) + '"></i>' +
+      (to ? `${from}–${to-1}` : `${from}+`) +
+      "<br>";
+  }
+  return div;
+};
+legend.addTo(map);
+
+
+// ------------------------------------------------------------
+// STATISTICS BOX (links unten)
+// ------------------------------------------------------------
+fetch("statistics.json")
+  .then(r => r.json())
+  .then(stats => {
+    const box = document.getElementById("stats");
+
+    // center map on top hexagon
+    window.centerOnHex = function(id, zoom=11) {
+      try {
+        const g = h3.h3ToGeo(id);
+        map.setView([g[0], g[1]], zoom);
+      } catch(e) { console.error(e); }
+    };
+
+    const tableMain = `
+      <table>
+        <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
+        <tr><td class="label">Distanz min:</td><td>${stats.distance_min_km} km</td></tr>
+        <tr><td class="label">Distanz max:</td><td>${stats.distance_max_km} km</td></tr>
+        <tr><td class="label">Ø Distanz:</td><td>${stats.distance_avg_km} km</td></tr>
+        <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
+      </table>
+    `;
+
+    const tableBuckets = `
+      <table>
+        ${Object.entries(stats.distance_buckets)
+          .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
+          .join("")}
+      </table>
+    `;
+
+    box.innerHTML = `
+      <h3 style="margin:0 0 6px 0;">Statistik</h3>
+      ${tableMain}
+      <br><b>Distanz-Buckets:</b>
+      ${tableBuckets}
+    `;
+  })
+  .catch(() => {
+    document.getElementById("stats").innerHTML =
+      "Keine Statistikdaten gefunden.";
+  });
+
+</script>
+</body>
+</html>
