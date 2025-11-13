@@ -6,7 +6,6 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
 
   <style>
     html, body, #map {
@@ -282,17 +281,11 @@ fetch("statistics.json")
       </table>
     `;
 
-    const top3 = stats.top3_hexagons_r7.map((hx,i)=>
-      `<a onclick="centerOnHex('${hx.h3_id}')">#${i+1} – ${hx.count} Teilnehmer</a><br>`
-    ).join("");
-
     box.innerHTML = `
       <h3 style="margin:0 0 6px 0;">Statistik</h3>
       ${tableMain}
       <br><b>Distanz-Buckets:</b>
       ${tableBuckets}
-      <br><b>Top-3 Hotspots (r7):</b><br>
-      ${top3}
     `;
   })
   .catch(() => {
