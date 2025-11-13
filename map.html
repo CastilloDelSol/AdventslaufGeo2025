@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>H3 Hexagon Heatmap</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    // --- Base map ---
+    const map = L.map('map').setView([53.55, 10.0], 8); // Center around Hamburg
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // --- Color scale based on "count" ---
+    function getColor(count) {
+      return count > 20 ? '#800026' :
+             count > 10 ? '#BD0026' :
+             count > 5  ? '#E31A1C' :
+             count > 2  ? '#FD8D3C' :
+             count > 1  ? '#FEB24C' :
+             count > 0  ? '#FED976' :
+                          '#FFEDA0';
+    }
+
+    // --- Style function ---
+    function style(feature) {
+      return {
+        fillColor: getColor(feature.properties.count),
+        weight: 1,
+        opacity: 0.5,
+        color: '#333',
+        fillOpacity: 0.5   // <-- transparency level (0 = invisible, 1 = opaque)
+      };
+    }
+
+    // --- Load GeoJSON ---
+    fetch('hexagons_r8.geojson')
+      .then(response => response.json())
+      .then(data => {
+        const layer = L.geoJSON(data, {
+          style: style,
+          onEachFeature: function (feature, layer) {
+            layer.bindPopup(
+              `<b>Count:</b> ${feature.properties.count}<br><b>H3:</b> ${feature.properties.h3_id}`
+            );
+          }
+        });
+        layer.addTo(map);
+        map.fitBounds(layer.getBounds());
+      });
+  </script>
+</body>
+</html>
