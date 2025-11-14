@@ -334,7 +334,7 @@ fetch("statistics.json")
     const box = document.getElementById("stats");
 
     let html = `
-      <b>Statistiken:</b>
+      <b>Statistiken</b>
       <table>
         <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
         <tr><td class="label">Min Distanz:</td><td>${stats.distance_min_km} km</td></tr>
@@ -343,7 +343,7 @@ fetch("statistics.json")
         <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
       </table>
 
-      <br><b>Anreie-Entfernungen:</b>
+      <br><b>Anreise-Entfernungen</b>
       <table>
         ${Object.entries(stats.distance_buckets)
           .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
