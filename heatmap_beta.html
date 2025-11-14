@@ -41,6 +41,18 @@ body, .legend, .stats-box, .leaflet-container {
   cursor: pointer;
 }
 
+.mail-icon {
+  margin-left: 6px;
+  text-decoration: none;
+  font-size: 15px;
+  color: #0078ff;
+  cursor: pointer;
+}
+  
+.mail-icon:hover {
+  opacity: 0.75;
+}
+
 /* PRIVACY POPUP */
 #privacyBox {
   display:none;
@@ -165,7 +177,8 @@ body, .legend, .stats-box, .leaflet-container {
 <!-- COPYRIGHT + DSGVO -->
 <div class="copyright-box">
   © 2025 Ratzeburger Adventslauf - <a onclick="openPrivacy()">Datenschutzhinweis</a><br>
-  Visualisierung & Datenaggregation: Tim Sonnenburg
+  Visualisierung & Datenaggregation: Tim Sonnenburg <a href="mailto:tim.sonnenburg@mailbox.org" class="mail-icon">✉️</a>
+
 </div>
 
 <!-- POPUP -->
