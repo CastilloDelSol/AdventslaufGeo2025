@@ -69,7 +69,7 @@ body, .legend, .stats-box, .leaflet-container {
   padding: 10px;
   line-height: 18px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
   
@@ -123,7 +123,7 @@ body, .legend, .stats-box, .leaflet-container {
   background:white;
   padding:12px;
   border-radius:8px;
-  font-size:12px;
+  font-size:13px;
   line-height:20px;
   box-shadow:0 2px 6px rgba(0,0,0,0.25);
   max-width:260px;
@@ -135,7 +135,7 @@ body, .legend, .stats-box, .leaflet-container {
 
 /* Tooltip */
 .leaflet-tooltip {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
   
@@ -173,21 +173,21 @@ body, .legend, .stats-box, .leaflet-container {
 
   <p>
     Statt einzelner Punkte werden alle Werte in sogenannte 
-    <b>H3-Hexagon-Zellen</b> umgerechnet. Diese Flächen besitzen je nach Auflösung
-    eine Größe von ca. 0,7 km² (r8) bis etwa 5 km² (r7). 
-    Dadurch werden <b>mehrere Haushalte zu einer Fläche zusammengefasst</b>.
+    <b><a href="https://github.com/uber/h3" target="_blank">H3-Hexagon-Zellen</a></b> 
+    umgerechnet. Diese Flächen besitzen je nach Auflösung
+    eine Größe von ca. 0,7 km² (r8) bis etwa 5 km² (r7).
   </p>
 
   <p>
     Zusätzlich erfolgt eine <b>Abstufung der Werte</b>:
     Zellen mit 1 oder 2 Teilnehmenden werden nur als 
-    <b>„0–2“</b> angegeben. Dadurch ist eine Rückführung auf einzelne Personen
+    <b>„1–2“</b> angegeben. Dadurch ist eine Rückführung auf einzelne Personen
     oder Adressen technisch ausgeschlossen.
   </p>
 
   <p>
     Die Datenverarbeitung erfolgt ausschließlich für statistische Zwecke zur
-    Visualisierung der regionalen Herkunft der Teilnehmenden. 
+    Visualisierung der regionalen Herkunft der eingegangenen Anmeldungen.
     Es findet <b>keine Profilbildung</b> und keine Weitergabe der Rohdaten statt.
   </p>
 
@@ -246,7 +246,7 @@ function getColor(count){
 }
 
 function formatCount(c){
-  if(c <= 2) return "0–2";
+  if(c <= 2) return "1–2";
   if(c <= 5) return "3–5";
   if(c <= 10) return "6–10";
   if(c <= 15) return "11–15";
@@ -272,7 +272,7 @@ function loadLayer(file, paneName, intoLayer){
           fillOpacity: 0.45
         }),
         onEachFeature: (f, layer) => {
-          layer.bindTooltip("Teilnehmer: " + formatCount(f.properties.count), { sticky:true });
+          layer.bindTooltip("Anmeldungen: " + formatCount(f.properties.count), { sticky:true });
         }
       });
       geo.addTo(intoLayer);
@@ -311,7 +311,7 @@ const legend = L.control({position:"bottomright"});
 legend.onAdd = function(){
   const div = L.DomUtil.create("div","legend");
   const ranges = [
-    [0,"0–2"],
+    [1,"1–2"],
     [3,"3–5"],
     [6,"6–10"],
     [11,"11–15"],
@@ -334,7 +334,7 @@ fetch("statistics.json")
     const box = document.getElementById("stats");
 
     let html = `
-      <h3 style="margin:0 0 6px 0;">Statistik</h3>
+      <b>Statistiken:</b>
       <table>
         <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
         <tr><td class="label">Min Distanz:</td><td>${stats.distance_min_km} km</td></tr>
@@ -343,7 +343,7 @@ fetch("statistics.json")
         <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
       </table>
 
-      <br><b>Distanz-Buckets:</b>
+      <br><b>Anreie-Entfernungen:</b>
       <table>
         ${Object.entries(stats.distance_buckets)
           .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
