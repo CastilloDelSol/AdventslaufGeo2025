@@ -222,22 +222,30 @@ function formatCount(c){
 const layer7 = L.layerGroup();
 const layer8 = L.layerGroup();
 
+/* r8 immer hinten, r7 immer vorne */
+function updateLayerOrder() {
+  if (map.hasLayer(layer8)) layer8.bringToBack();
+  if (map.hasLayer(layer7)) layer7.bringToFront();
+}
+
 function loadLayer(file, intoLayer){
-  fetch(file).then(r=>r.json()).then(data=>{
-  L.geoJSON(data,{
-    style:f=>({
-      fillColor:getColor(f.properties.count),
-      color:"#222",
-      weight:1.2,
-      fillOpacity:0.45
-    }),
-    onEachFeature:(f,layer)=>{
-      layer.bindTooltip("Teilnehmer: "+formatCount(f.properties.count),{sticky:true});
-    }
-  })
-  .setZIndex(intoLayer === layer7 ? 10 : 1)   // r7 oben, r8 unten
-  .addTo(intoLayer);
-  });
+  fetch(file)
+    .then(r => r.json())
+    .then(data => {
+      const geo = L.geoJSON(data, {
+        style: f => ({
+          fillColor: getColor(f.properties.count),
+          color: "#222",
+          weight: 1.2,
+          fillOpacity: 0.45
+        }),
+        onEachFeature: (f, layer) => {
+          layer.bindTooltip("Teilnehmer: " + formatCount(f.properties.count), { sticky:true });
+        }
+      });
+      geo.addTo(intoLayer);
+      updateLayerOrder(); // nach jedem Laden Reihenfolge korrigieren
+    });
 }
 
 loadLayer("hexagons_r7.geojson", layer7);
@@ -268,12 +276,6 @@ btnR8.onclick = () => {
   }
   updateLayerOrder();
 };
-
-function updateLayerOrder() {
-  if (map.hasLayer(layer8)) layer8.bringToBack();
-  if (map.hasLayer(layer7)) layer7.bringToFront();
-}
-
 
 /* ---------------------- LEGEND ---------------------- */
 const legend = L.control({position:"bottomright"});
@@ -324,7 +326,8 @@ fetch("statistics.json")
   })
   .catch(() => { document.getElementById("stats").innerHTML="Keine Statistikdaten gefunden."; });
 
-  updateLayerOrder();
+// Sicherheitshalber einmal nach Initialisierung
+updateLayerOrder();
 </script>
 </body>
 </html>
