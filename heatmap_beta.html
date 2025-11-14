@@ -168,13 +168,12 @@ darkButton.addTo(map);
 // COLOR SCALE – Viridis INVERTED
 // ------------------------------------------------------------
 function getColor(count) {
-  return count > 25 ? '#440154' :     // dark violet
-         count > 13 ? '#404387' :     // purple/blue
-         count > 8  ? '#29798e' :     // teal-blue
-         count > 5  ? '#1f9a8a' :     // teal
-         count > 3  ? '#35B779' :     // green-teal
-         count > 2  ? '#8FD744' :     // yellow-green
-         count > 0  ? '#FDE725' :     // bright yellow
+  return count > 25 ? '#440154' :   // deep purple
+         count > 15 ? '#414487' :   // purple-blue
+         count > 10 ? '#2A788E' :   // blue-teal
+         count > 5  ? '#22A884' :   // teal-green
+         count > 2  ? '#7AD151' :   // lime green
+         count > 0  ? '#FDE725' :   // yellow
                       '#FDE725';
 }
 
@@ -226,24 +225,26 @@ L.control.layers(null, layers, { collapsed:false }).addTo(map);
 // LEGEND (rechts unten)
 // ------------------------------------------------------------
 const legend = L.control({ position: "bottomright" });
+
 legend.onAdd = function () {
   const div = L.DomUtil.create("div", "legend");
-  const grades = [0, 1, 3, 5, 10, 15, 25];
+  const grades = [0, 3, 6, 11, 16, 26];
 
   div.innerHTML += "<b>Anmeldungen</b><br>";
 
   for (let i = 0; i < grades.length; i++) {
     const from = grades[i];
     const to = grades[i + 1];
-    const sample = (to ? from+0.01 : from+100);
+    const sample = (to ? from + 0.01 : from + 100);
 
     div.innerHTML +=
       '<i style="background:' + getColor(sample) + '"></i>' +
-      (to ? `${from}–${to-1}` : `${from}+`) +
+      (to ? `${from}–${to - 1}` : `${from}+`) +
       "<br>";
   }
   return div;
 };
+
 legend.addTo(map);
 
 
