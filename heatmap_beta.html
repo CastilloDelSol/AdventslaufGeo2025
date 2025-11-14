@@ -245,7 +245,6 @@ loadLayer("hexagons_r8.geojson", layer8);
 
 layer8.addTo(map);   // background
 layer7.addTo(map);   // top
-updateLayerOrder();
 
 /* ---------------------- BUTTON LOGIC  (kombinierbar!) ---------------------- */
 btnR7.onclick = () => {
@@ -325,6 +324,7 @@ fetch("statistics.json")
   })
   .catch(() => { document.getElementById("stats").innerHTML="Keine Statistikdaten gefunden."; });
 
+  updateLayerOrder();
 </script>
 </body>
 </html>
