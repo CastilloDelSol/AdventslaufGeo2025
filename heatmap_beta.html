@@ -166,10 +166,34 @@ body, .legend, .stats-box, .leaflet-container {
 <div id="privacyBox">
   <h3>Datenschutzhinweis</h3>
   <p>
-  Die gezeigten Daten sind vollständig anonymisiert und in Hexagon-Flächen aggregiert.
-  Einzelpersonen oder Hausadressen sind nicht identifizierbar.
+    Die dargestellten Karten verwenden eine vollständig anonymisierte Form der
+    Geodatenverarbeitung. Es werden <b>keine Adressen</b>, <b>keine exakten Koordinaten</b> 
+    und <b>keine personenbezogenen Daten</b> gespeichert oder dargestellt.
   </p>
-  <button onclick="closePrivacy()">Schließen</button>
+
+  <p>
+    Statt einzelner Punkte werden alle Werte in sogenannte 
+    <b>H3-Hexagon-Zellen</b> umgerechnet. Diese Flächen besitzen je nach Auflösung
+    eine Größe von ca. 0,7 km² (r8) bis etwa 5 km² (r7). 
+    Dadurch werden <b>mehrere Haushalte zu einer Fläche zusammengefasst</b>.
+  </p>
+
+  <p>
+    Zusätzlich erfolgt eine <b>Abstufung der Werte</b>:
+    Zellen mit 1 oder 2 Teilnehmenden werden nur als 
+    <b>„0–2“</b> angegeben. Dadurch ist eine Rückführung auf einzelne Personen
+    oder Adressen technisch ausgeschlossen.
+  </p>
+
+  <p>
+    Die Datenverarbeitung erfolgt ausschließlich für statistische Zwecke zur
+    Visualisierung der regionalen Herkunft der Teilnehmenden. 
+    Es findet <b>keine Profilbildung</b> und keine Weitergabe der Rohdaten statt.
+  </p>
+
+  <center>
+    <button onclick="closePrivacy()">Fenster Schließen</button>
+  </center>
 </div>
 
 <script>
