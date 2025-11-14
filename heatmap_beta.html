@@ -184,9 +184,8 @@ const darkTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x
 
 let dark = false;
 
-
 /* ------------------------------------------------------ */
-/* BUTTON HANDLING                                        */
+/* DARK MODE BUTTON                                       */
 /* ------------------------------------------------------ */
 document.getElementById("btnDark").onclick = () => {
   if(!dark){
@@ -213,7 +212,6 @@ function getColor(count){
                       '#FDE725';
 }
 
-/* Anzeige-Text statt Count */
 function formatCount(c){
   if(c <= 2) return "0–2";
   if(c <= 5) return "3–5";
@@ -249,8 +247,12 @@ loadLayer("hexagons_r7.geojson", layer7);
 loadLayer("hexagons_r8.geojson", layer8);
 
 layer8.addTo(map);   // background
-layer7.addTo(map);   // always on top
+layer7.addTo(map);   // front
 
+
+/* keep r7 always above r8 */
+layer7.eachLayer(l => l.setZIndex(10));
+layer8.eachLayer(l => l.setZIndex(1));
 
 /* ------------------------------------------------------ */
 /* BUTTONS FOR LAYER SWITCHING                            */
@@ -258,15 +260,15 @@ layer7.addTo(map);   // always on top
 document.getElementById("btnR7").onclick = () => {
   btnR7.classList.add("active");
   btnR8.classList.remove("active");
-  map.removeLayer(layer8);
   layer7.addTo(map);
+  layer8.addTo(map);
 };
 
 document.getElementById("btnR8").onclick = () => {
   btnR7.classList.remove("active");
   btnR8.classList.add("active");
-  map.removeLayer(layer7);
   layer8.addTo(map);
+  layer7.addTo(map);
 };
 
 
