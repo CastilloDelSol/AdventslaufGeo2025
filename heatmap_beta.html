@@ -6,293 +6,293 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
 
-  <style>
-    html, body, #map {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+/* ------------------------------------------------------ */
+/* GLOBAL STYLES                                           */
+/* ------------------------------------------------------ */
+html, body, #map {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-    /* Globale Schriftart (gleich wie Leaflet / System UI) */
-    body, .legend, .stats-box, .dark-toggle, .leaflet-container {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                   Roboto, Helvetica, Arial, sans-serif;
-    }
+body, .legend, .stats-box, .leaflet-container {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, Helvetica, Arial, sans-serif;
+}
 
-    /* ----------------------------- */
-    /* Legend (rechts unten)        */
-    /* ----------------------------- */
-    .legend {
-      background: white;
-      padding: 10px;
-      line-height: 18px;
-      border-radius: 6px;
-      font-size: 14px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    }
-    .legend i {
-      width: 18px;
-      height: 18px;
-      float: left;
-      margin-right: 8px;
-      opacity: 0.85;
-      border-radius: 3px;
-    }
+/* ------------------------------------------------------ */
+/* COPYRIGHT + DSGVO BUTTON (unten links)                 */
+/* ------------------------------------------------------ */
+.copyright-box {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: white;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  z-index: 9901;
+  max-width: 240px;
+}
 
-    /* ----------------------------- */
-    /* Dark Mode Button              */
-    /* ----------------------------- */
-    .dark-toggle {
-      background: white;
-      padding: 6px 10px;
-      border: 1px solid #999;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 5px;
-      font-size: 14px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    }
-    .dark-toggle:hover {
-      background: #eee;
-    }
+.copyright-box a {
+  color: #0078ff;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-    /* ----------------------------- */
-    /* Statistics Box (links unten) */
-    /* ----------------------------- */
-    .stats-box {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: white;
-      padding: 14px;
-      border-radius: 8px;
-      font-size: 16px;
-      line-height: 22px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-      max-width: 300px;
-      z-index: 9900;
-    }
+#privacyBox {
+  display:none;
+  position: fixed;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%);
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  width: 320px;
+  max-width:90%;
+  box-shadow:0 4px 15px rgba(0,0,0,0.4);
+  z-index:99999;
+}
+#privacyBox button{
+  margin-top:15px;
+  padding:8px 12px;
+  cursor:pointer;
+}
 
-    .stats-box table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
-    }
-    .stats-box td {
-      padding: 1px 4px;
-      vertical-align: top;
-    }
-    .stats-box td.label {
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .stats-box a {
-      color: #0078ff;
-      cursor: pointer;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .stats-box a:hover {
-      text-decoration: underline;
-    }
+/* ------------------------------------------------------ */
+/* LEGEND (unten rechts)                                  */
+/* ------------------------------------------------------ */
+.legend {
+  background: white;
+  padding: 10px;
+  line-height: 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  opacity: 0.85;
+  border-radius: 3px;
+}
 
-    /* Mobile */
-    @media (max-width: 600px) {
-      .stats-box {
-        font-size: 18px;
-        line-height: 24px;
-        max-width: 330px;
-        padding: 18px;
-      }
-    }
-  </style>
+/* ------------------------------------------------------ */
+/* BUTTONS RECHTS (Dark Mode, r7, r8)                     */
+/* ------------------------------------------------------ */
+.right-buttons {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 9902;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-button {
+  background:white;
+  padding: 8px 14px;
+  border-radius:6px;
+  border:1px solid #999;
+  cursor:pointer;
+  font-size:14px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.25);
+  min-width:130px;
+  text-align:center;
+}
+.map-button:hover{
+  background:#f0f0f0;
+}
+.map-button.active{
+  background:#0078ff;
+  color:white;
+  border-color:#005fcc;
+}
+
+/* ------------------------------------------------------ */
+/* TOOLTIP                                                */
+/* ------------------------------------------------------ */
+.leaflet-tooltip {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+</style>
 </head>
 
 <body>
+
 <div id="map"></div>
-<div id="stats" class="stats-box">Lade Statistik…</div>
+
+<!-- RIGHT BUTTON PANEL -->
+<div class="right-buttons">
+  <div id="btnDark" class="map-button">Dark Mode</div>
+  <div id="btnR7" class="map-button active">Auflösung 7</div>
+  <div id="btnR8" class="map-button">Auflösung 8</div>
+</div>
+
+<!-- COPYRIGHT + DSGVO -->
+<div class="copyright-box">
+  © 2025 Ratzeburger Adventslauf<br>
+  Visualisierung & Datenaggregation: Tim Sonnenburg<br>
+  <a onclick="openPrivacy()">Datenschutzhinweis</a>
+</div>
+
+<!-- DSGVO POPUP -->
+<div id="privacyBox">
+  <h3>Datenschutzhinweis</h3>
+  <p>
+  Die gezeigten Daten sind vollständig anonymisiert und in Hexagon-Flächen aggregiert.
+  Einzelpersonen oder Hausadressen sind zu keinem Zeitpunkt identifizierbar.
+  </p>
+  <button onclick="closePrivacy()">Schließen</button>
+</div>
+
 
 <script>
-// ------------------------------------------------------------
-// MAP SETUP
-// ------------------------------------------------------------
-const isMobile = window.matchMedia("(max-width: 600px)").matches;
+/* ------------------------------------------------------ */
+/* PRIVACY HANDLER                                        */
+/* ------------------------------------------------------ */
+function openPrivacy(){ document.getElementById("privacyBox").style.display="block"; }
+function closePrivacy(){ document.getElementById("privacyBox").style.display="none"; }
 
-// ------------------------------------------------------------
-// INITIAL MAP – forced center & zoom (never overridden)
-// ------------------------------------------------------------
+/* ------------------------------------------------------ */
+/* MAP INIT                                               */
+/* ------------------------------------------------------ */
 const map = L.map('map', {
   preferCanvas: true,
-  inertia: false, // prevents auto-movement when layers load
+  inertia: false,
   center: [53.699327, 10.774143],
   zoom: 10
 });
 
-
-// ------------------------------------------------------------
-// TILE LAYERS
-// ------------------------------------------------------------
-const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap'
+const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19
 }).addTo(map);
 
-const darkTiles = L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-  { maxZoom: 19 }
-);
+const darkTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19});
 
-let darkMode = false;
+let dark = false;
 
-// Dark Mode Switch
-const darkButton = L.control({position: 'topleft'});
-darkButton.onAdd = function() {
-  const div = L.DomUtil.create('div', 'dark-toggle');
-  div.innerHTML = "Dark Mode";
-  div.onclick = () => {
-    if (!darkMode) {
-      map.removeLayer(lightTiles); darkTiles.addTo(map);
-      darkMode = true; div.innerHTML = "Light Mode";
-    } else {
-      map.removeLayer(darkTiles); lightTiles.addTo(map);
-      darkMode = false; div.innerHTML = "Dark Mode";
-    }
-  };
-  return div;
+
+/* ------------------------------------------------------ */
+/* BUTTON HANDLING                                        */
+/* ------------------------------------------------------ */
+document.getElementById("btnDark").onclick = () => {
+  if(!dark){
+    map.removeLayer(lightTiles); darkTiles.addTo(map);
+    dark = true;
+    btnDark.innerHTML="Light Mode";
+  } else {
+    map.removeLayer(darkTiles); lightTiles.addTo(map);
+    dark = false;
+    btnDark.innerHTML="Dark Mode";
+  }
 };
-darkButton.addTo(map);
 
-
-// ------------------------------------------------------------
-// COLOR SCALE – Viridis INVERTED
-// ------------------------------------------------------------
-function getColor(count) {
-  return count > 25 ? '#440154' :   // deep purple
-         count > 15 ? '#414487' :   // purple-blue
-         count > 10 ? '#2A788E' :   // blue-teal
-         count > 5  ? '#22A884' :   // teal-green
-         count > 2  ? '#7AD151' :   // lime green
-         count > 0  ? '#FDE725' :   // yellow
+/* ------------------------------------------------------ */
+/* COLOR SCALE                                            */
+/* ------------------------------------------------------ */
+function getColor(count){
+  return count > 25 ? '#440154' :
+         count > 15 ? '#414487' :
+         count > 10 ? '#2A788E' :
+         count > 5  ? '#22A884' :
+         count > 2  ? '#7AD151' :
+         count > 0  ? '#FDE725' :
                       '#FDE725';
 }
 
-function style(feature) {
-  return {
-    fillColor: getColor(feature.properties.count),
-    weight: isMobile ? 2.0 : 1.2,
-    opacity: 0.9,
-    color: '#222',
-    fillOpacity: isMobile ? 0.50 : 0.40
-  };
+/* Anzeige-Text statt Count */
+function formatCount(c){
+  if(c <= 2) return "0–2";
+  if(c <= 5) return "3–5";
+  if(c <= 10) return "6–10";
+  if(c <= 15) return "11–15";
+  if(c <= 25) return "16–25";
+  return "25+";
 }
 
+/* ------------------------------------------------------ */
+/* GEOJSON LAYER LOAD                                     */
+/* ------------------------------------------------------ */
+const layer7 = L.layerGroup();
+const layer8 = L.layerGroup();
 
-// ------------------------------------------------------------
-// LAYERS r7 + r8
-// ------------------------------------------------------------
-const layers = {
-  "Auflösung 7": L.layerGroup(),
-  "Auflösung 8": L.layerGroup()
-};
-
-const resolutionFiles = {
-  "Auflösung 7": "hexagons_r7.geojson",
-  "Auflösung 8": "hexagons_r8.geojson"
-};
-
-for (const [name, file] of Object.entries(resolutionFiles)) {
-  fetch(file)
-    .then(r => r.json())
-    .then(data => {
-      const layer = L.geoJSON(data, {
-        style,
-        onEachFeature: (feature, layer) => {
-          layer.bindTooltip(`Count: ${feature.properties.count}`, { sticky: true });
-        }
-      });
-      layer.addTo(layers[name]);
-      if (name === "Auflösung 7") layers[name].addTo(map);
-    })
-    .catch(err => console.error("Error loading", file, err));
+function loadLayer(file, intoLayer){
+  fetch(file).then(r=>r.json()).then(data=>{
+    L.geoJSON(data,{
+      style: f => ({
+        fillColor:getColor(f.properties.count),
+        color:"#222",
+        weight:1.2,
+        fillOpacity:0.45
+      }),
+      onEachFeature: (f, layer)=>{
+        layer.bindTooltip("Teilnehmer: " + formatCount(f.properties.count),{sticky:true});
+      }
+    }).addTo(intoLayer);
+  });
 }
 
-// Layer Switcher
-L.control.layers(null, layers, { collapsed:false }).addTo(map);
+loadLayer("hexagons_r7.geojson", layer7);
+loadLayer("hexagons_r8.geojson", layer8);
+
+layer8.addTo(map);   // background
+layer7.addTo(map);   // always on top
 
 
-// ------------------------------------------------------------
-// LEGEND (rechts unten)
-// ------------------------------------------------------------
-const legend = L.control({ position: "bottomright" });
+/* ------------------------------------------------------ */
+/* BUTTONS FOR LAYER SWITCHING                            */
+/* ------------------------------------------------------ */
+document.getElementById("btnR7").onclick = () => {
+  btnR7.classList.add("active");
+  btnR8.classList.remove("active");
+  map.removeLayer(layer8);
+  layer7.addTo(map);
+};
 
-legend.onAdd = function () {
-  const div = L.DomUtil.create("div", "legend");
-  const grades = [0, 3, 6, 11, 16, 26];
+document.getElementById("btnR8").onclick = () => {
+  btnR7.classList.remove("active");
+  btnR8.classList.add("active");
+  map.removeLayer(layer7);
+  layer8.addTo(map);
+};
 
-  div.innerHTML += "<b>Anmeldungen</b><br>";
 
-  for (let i = 0; i < grades.length; i++) {
-    const from = grades[i];
-    const to = grades[i + 1];
-    const sample = (to ? from + 0.01 : from + 100);
+/* ------------------------------------------------------ */
+/* LEGEND                                                 */
+/* ------------------------------------------------------ */
+const legend = L.control({position:"bottomright"});
+legend.onAdd = function(){
+  const div = L.DomUtil.create("div","legend");
+  const ranges = [
+    [0,"0–2"],
+    [3,"3–5"],
+    [6,"6–10"],
+    [11,"11–15"],
+    [16,"16–25"],
+    [26,"25+"]
+  ];
 
-    div.innerHTML +=
-      '<i style="background:' + getColor(sample) + '"></i>' +
-      (to ? `${from}–${to - 1}` : `${from}+`) +
-      "<br>";
-  }
+  div.innerHTML="<b>Anmeldungen</b><br>";
+  ranges.forEach(([val,label])=>{
+    div.innerHTML += `<i style="background:${getColor(val)}"></i>${label}<br>`;
+  });
+
   return div;
 };
-
 legend.addTo(map);
-
-
-// ------------------------------------------------------------
-// STATISTICS BOX (links unten)
-// ------------------------------------------------------------
-fetch("statistics.json")
-  .then(r => r.json())
-  .then(stats => {
-    const box = document.getElementById("stats");
-
-    // center map on top hexagon
-    window.centerOnHex = function(id, zoom=11) {
-      try {
-        const g = h3.h3ToGeo(id);
-        map.setView([g[0], g[1]], zoom);
-      } catch(e) { console.error(e); }
-    };
-
-    const tableMain = `
-      <table>
-        <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
-        <tr><td class="label">Distanz min:</td><td>${stats.distance_min_km} km</td></tr>
-        <tr><td class="label">Distanz max:</td><td>${stats.distance_max_km} km</td></tr>
-        <tr><td class="label">Ø Distanz:</td><td>${stats.distance_avg_km} km</td></tr>
-        <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
-      </table>
-    `;
-
-    const tableBuckets = `
-      <table>
-        ${Object.entries(stats.distance_buckets)
-          .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
-          .join("")}
-      </table>
-    `;
-
-    box.innerHTML = `
-      <h3 style="margin:0 0 6px 0;">Statistik</h3>
-      ${tableMain}
-      <br><b>Distanz-Buckets:</b>
-      ${tableBuckets}
-    `;
-  })
-  .catch(() => {
-    document.getElementById("stats").innerHTML =
-      "Keine Statistikdaten gefunden.";
-  });
 
 </script>
 </body>
