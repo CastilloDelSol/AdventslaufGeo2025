@@ -224,17 +224,19 @@ const layer8 = L.layerGroup();
 
 function loadLayer(file, intoLayer){
   fetch(file).then(r=>r.json()).then(data=>{
-    L.geoJSON(data,{
-      style:f=>({
-        fillColor:getColor(f.properties.count),
-        color:"#222",
-        weight:1.2,
-        fillOpacity:0.45
-      }),
-      onEachFeature:(f,layer)=>{
-        layer.bindTooltip("Teilnehmer: "+formatCount(f.properties.count),{sticky:true});
-      }
-    }).addTo(intoLayer);
+  L.geoJSON(data,{
+    style:f=>({
+      fillColor:getColor(f.properties.count),
+      color:"#222",
+      weight:1.2,
+      fillOpacity:0.45
+    }),
+    onEachFeature:(f,layer)=>{
+      layer.bindTooltip("Teilnehmer: "+formatCount(f.properties.count),{sticky:true});
+    }
+  })
+  .setZIndex(intoLayer === layer7 ? 10 : 1)   // r7 oben, r8 unten
+  .addTo(intoLayer);
   });
 }
 
@@ -243,7 +245,7 @@ loadLayer("hexagons_r8.geojson", layer8);
 
 layer8.addTo(map);   // background
 layer7.addTo(map);   // top
-
+updateLayerOrder();
 
 /* ---------------------- BUTTON LOGIC  (kombinierbar!) ---------------------- */
 btnR7.onclick = () => {
@@ -254,6 +256,7 @@ btnR7.onclick = () => {
     layer7.addTo(map);
     btnR7.classList.add("active");
   }
+  updateLayerOrder();
 };
 
 btnR8.onclick = () => {
@@ -264,7 +267,14 @@ btnR8.onclick = () => {
     layer8.addTo(map);
     btnR8.classList.add("active");
   }
+  updateLayerOrder();
 };
+
+function updateLayerOrder() {
+  if (map.hasLayer(layer8)) layer8.bringToBack();
+  if (map.hasLayer(layer7)) layer7.bringToFront();
+}
+
 
 /* ---------------------- LEGEND ---------------------- */
 const legend = L.control({position:"bottomright"});
