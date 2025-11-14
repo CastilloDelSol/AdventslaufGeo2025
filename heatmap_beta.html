@@ -199,6 +199,13 @@ btnDark.onclick = () => {
   }
 };
 
+/* ---------------------- PANES: r8 unten, r7 oben ---------------------- */
+map.createPane('hex8');
+map.getPane('hex8').style.zIndex = 410;   // untere Ebene
+
+map.createPane('hex7');
+map.getPane('hex7').style.zIndex = 420;   // darüber
+
 /* ---------------------- COLOR SCALE ---------------------- */
 function getColor(count){
   return count > 25 ? '#440154' :
@@ -222,17 +229,13 @@ function formatCount(c){
 const layer7 = L.layerGroup();
 const layer8 = L.layerGroup();
 
-/* r8 immer hinten, r7 immer vorne */
-function updateLayerOrder() {
-  if (map.hasLayer(layer8)) layer8.bringToBack();
-  if (map.hasLayer(layer7)) layer7.bringToFront();
-}
-
-function loadLayer(file, intoLayer){
+/* GeoJSON-Layer mit festem Pane erzeugen */
+function loadLayer(file, paneName, intoLayer){
   fetch(file)
     .then(r => r.json())
     .then(data => {
       const geo = L.geoJSON(data, {
+        pane: paneName,    // <-- hier wird die Ebene festgelegt
         style: f => ({
           fillColor: getColor(f.properties.count),
           color: "#222",
@@ -244,15 +247,14 @@ function loadLayer(file, intoLayer){
         }
       });
       geo.addTo(intoLayer);
-      updateLayerOrder(); // nach jedem Laden Reihenfolge korrigieren
     });
 }
 
-loadLayer("hexagons_r7.geojson", layer7);
-loadLayer("hexagons_r8.geojson", layer8);
+loadLayer("hexagons_r7.geojson", "hex7", layer7);
+loadLayer("hexagons_r8.geojson", "hex8", layer8);
 
-layer8.addTo(map);   // background
-layer7.addTo(map);   // top
+layer8.addTo(map);   // Hintergrund
+layer7.addTo(map);   // Vordergrund
 
 /* ---------------------- BUTTON LOGIC  (kombinierbar!) ---------------------- */
 btnR7.onclick = () => {
@@ -263,7 +265,6 @@ btnR7.onclick = () => {
     layer7.addTo(map);
     btnR7.classList.add("active");
   }
-  updateLayerOrder();
 };
 
 btnR8.onclick = () => {
@@ -274,7 +275,6 @@ btnR8.onclick = () => {
     layer8.addTo(map);
     btnR8.classList.add("active");
   }
-  updateLayerOrder();
 };
 
 /* ---------------------- LEGEND ---------------------- */
@@ -325,9 +325,6 @@ fetch("statistics.json")
     box.innerHTML = html;
   })
   .catch(() => { document.getElementById("stats").innerHTML="Keine Statistikdaten gefunden."; });
-
-// Sicherheitshalber einmal nach Initialisierung
-updateLayerOrder();
 </script>
 </body>
 </html>
