@@ -9,9 +9,6 @@
   <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
 
 <style>
-/* ------------------------------------------------------ */
-/* GLOBAL STYLES                                           */
-/* ------------------------------------------------------ */
 html, body, #map {
   height: 100%;
   margin: 0;
@@ -23,9 +20,7 @@ body, .legend, .stats-box, .leaflet-container {
                Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ------------------------------------------------------ */
-/* COPYRIGHT + DSGVO BUTTON (unten links)                 */
-/* ------------------------------------------------------ */
+/* ---------------------- COPYRIGHT BOX ---------------------- */
 .copyright-box {
   position: absolute;
   bottom: 20px;
@@ -37,7 +32,7 @@ body, .legend, .stats-box, .leaflet-container {
   line-height: 18px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   z-index: 9901;
-  max-width: 240px;
+  max-width: 260px;
 }
 
 .copyright-box a {
@@ -46,6 +41,7 @@ body, .legend, .stats-box, .leaflet-container {
   cursor: pointer;
 }
 
+/* PRIVACY POPUP */
 #privacyBox {
   display:none;
   position: fixed;
@@ -66,9 +62,7 @@ body, .legend, .stats-box, .leaflet-container {
   cursor:pointer;
 }
 
-/* ------------------------------------------------------ */
-/* LEGEND (unten rechts)                                  */
-/* ------------------------------------------------------ */
+/* ---------------------- LEGEND ---------------------- */
 .legend {
   background: white;
   padding: 10px;
@@ -86,9 +80,7 @@ body, .legend, .stats-box, .leaflet-container {
   border-radius: 3px;
 }
 
-/* ------------------------------------------------------ */
-/* BUTTONS RECHTS (Dark Mode, r7, r8)                     */
-/* ------------------------------------------------------ */
+/* ---------------------- BUTTONS rechts ---------------------- */
 .right-buttons {
   position: absolute;
   top: 20px;
@@ -119,14 +111,28 @@ body, .legend, .stats-box, .leaflet-container {
   border-color:#005fcc;
 }
 
-/* ------------------------------------------------------ */
-/* TOOLTIP                                                */
-/* ------------------------------------------------------ */
+/* ---------------------- STATS BOX unter Buttons ---------------------- */
+.stats-box {
+  position: absolute;
+  top: 170px;
+  right: 20px;
+  background:white;
+  padding:12px;
+  border-radius:8px;
+  font-size:14px;
+  line-height:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  max-width:260px;
+  z-index:9903;
+}
+.stats-box table { width:100%; border-collapse:collapse; }
+.stats-box td.label { font-weight:600; white-space:nowrap; padding-right:6px; }
+
+/* Tooltip */
 .leaflet-tooltip {
   font-size: 13px;
   font-weight: 500;
 }
-
 </style>
 </head>
 
@@ -138,8 +144,11 @@ body, .legend, .stats-box, .leaflet-container {
 <div class="right-buttons">
   <div id="btnDark" class="map-button">Dark Mode</div>
   <div id="btnR7" class="map-button active">Auflösung 7</div>
-  <div id="btnR8" class="map-button">Auflösung 8</div>
+  <div id="btnR8" class="map-button active">Auflösung 8</div>
 </div>
+
+<!-- STATS BOX -->
+<div id="stats" class="stats-box">Lade Statistik…</div>
 
 <!-- COPYRIGHT + DSGVO -->
 <div class="copyright-box">
@@ -148,27 +157,22 @@ body, .legend, .stats-box, .leaflet-container {
   <a onclick="openPrivacy()">Datenschutzhinweis</a>
 </div>
 
-<!-- DSGVO POPUP -->
+<!-- POPUP -->
 <div id="privacyBox">
   <h3>Datenschutzhinweis</h3>
   <p>
   Die gezeigten Daten sind vollständig anonymisiert und in Hexagon-Flächen aggregiert.
-  Einzelpersonen oder Hausadressen sind zu keinem Zeitpunkt identifizierbar.
+  Einzelpersonen oder Hausadressen sind nicht identifizierbar.
   </p>
   <button onclick="closePrivacy()">Schließen</button>
 </div>
 
-
 <script>
-/* ------------------------------------------------------ */
-/* PRIVACY HANDLER                                        */
-/* ------------------------------------------------------ */
+/* ---------------------- PRIVACY ---------------------- */
 function openPrivacy(){ document.getElementById("privacyBox").style.display="block"; }
 function closePrivacy(){ document.getElementById("privacyBox").style.display="none"; }
 
-/* ------------------------------------------------------ */
-/* MAP INIT                                               */
-/* ------------------------------------------------------ */
+/* ---------------------- MAP INIT ---------------------- */
 const map = L.map('map', {
   preferCanvas: true,
   inertia: false,
@@ -184,31 +188,24 @@ const darkTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x
 
 let dark = false;
 
-/* ------------------------------------------------------ */
-/* DARK MODE BUTTON                                       */
-/* ------------------------------------------------------ */
-document.getElementById("btnDark").onclick = () => {
+/* ---------------------- DARK MODE ---------------------- */
+btnDark.onclick = () => {
   if(!dark){
     map.removeLayer(lightTiles); darkTiles.addTo(map);
-    dark = true;
-    btnDark.innerHTML="Light Mode";
+    dark = true; btnDark.innerHTML="Light Mode";
   } else {
     map.removeLayer(darkTiles); lightTiles.addTo(map);
-    dark = false;
-    btnDark.innerHTML="Dark Mode";
+    dark = false; btnDark.innerHTML="Dark Mode";
   }
 };
 
-/* ------------------------------------------------------ */
-/* COLOR SCALE                                            */
-/* ------------------------------------------------------ */
+/* ---------------------- COLOR SCALE ---------------------- */
 function getColor(count){
   return count > 25 ? '#440154' :
          count > 15 ? '#414487' :
          count > 10 ? '#2A788E' :
          count > 5  ? '#22A884' :
          count > 2  ? '#7AD151' :
-         count > 0  ? '#FDE725' :
                       '#FDE725';
 }
 
@@ -221,23 +218,21 @@ function formatCount(c){
   return "25+";
 }
 
-/* ------------------------------------------------------ */
-/* GEOJSON LAYER LOAD                                     */
-/* ------------------------------------------------------ */
+/* ---------------------- LAYER LOAD ---------------------- */
 const layer7 = L.layerGroup();
 const layer8 = L.layerGroup();
 
 function loadLayer(file, intoLayer){
   fetch(file).then(r=>r.json()).then(data=>{
     L.geoJSON(data,{
-      style: f => ({
+      style:f=>({
         fillColor:getColor(f.properties.count),
         color:"#222",
         weight:1.2,
         fillOpacity:0.45
       }),
-      onEachFeature: (f, layer)=>{
-        layer.bindTooltip("Teilnehmer: " + formatCount(f.properties.count),{sticky:true});
+      onEachFeature:(f,layer)=>{
+        layer.bindTooltip("Teilnehmer: "+formatCount(f.properties.count),{sticky:true});
       }
     }).addTo(intoLayer);
   });
@@ -247,34 +242,31 @@ loadLayer("hexagons_r7.geojson", layer7);
 loadLayer("hexagons_r8.geojson", layer8);
 
 layer8.addTo(map);   // background
-layer7.addTo(map);   // front
+layer7.addTo(map);   // top
 
 
-/* keep r7 always above r8 */
-layer7.eachLayer(l => l.setZIndex(10));
-layer8.eachLayer(l => l.setZIndex(1));
-
-/* ------------------------------------------------------ */
-/* BUTTONS FOR LAYER SWITCHING                            */
-/* ------------------------------------------------------ */
-document.getElementById("btnR7").onclick = () => {
-  btnR7.classList.add("active");
-  btnR8.classList.remove("active");
-  layer7.addTo(map);
-  layer8.addTo(map);
+/* ---------------------- BUTTON LOGIC  (kombinierbar!) ---------------------- */
+btnR7.onclick = () => {
+  if(map.hasLayer(layer7)){
+    map.removeLayer(layer7);
+    btnR7.classList.remove("active");
+  } else {
+    layer7.addTo(map);
+    btnR7.classList.add("active");
+  }
 };
 
-document.getElementById("btnR8").onclick = () => {
-  btnR7.classList.remove("active");
-  btnR8.classList.add("active");
-  layer8.addTo(map);
-  layer7.addTo(map);
+btnR8.onclick = () => {
+  if(map.hasLayer(layer8)){
+    map.removeLayer(layer8);
+    btnR8.classList.remove("active");
+  } else {
+    layer8.addTo(map);
+    btnR8.classList.add("active");
+  }
 };
 
-
-/* ------------------------------------------------------ */
-/* LEGEND                                                 */
-/* ------------------------------------------------------ */
+/* ---------------------- LEGEND ---------------------- */
 const legend = L.control({position:"bottomright"});
 legend.onAdd = function(){
   const div = L.DomUtil.create("div","legend");
@@ -291,10 +283,37 @@ legend.onAdd = function(){
   ranges.forEach(([val,label])=>{
     div.innerHTML += `<i style="background:${getColor(val)}"></i>${label}<br>`;
   });
-
   return div;
 };
 legend.addTo(map);
+
+/* ---------------------- LOAD STATS INTO BOX ---------------------- */
+fetch("statistics.json")
+  .then(r => r.json())
+  .then(stats => {
+    const box = document.getElementById("stats");
+
+    let html = `
+      <h3 style="margin:0 0 6px 0;">Statistik</h3>
+      <table>
+        <tr><td class="label">Teilnehmer:</td><td>${stats.total_participants}</td></tr>
+        <tr><td class="label">Min Distanz:</td><td>${stats.distance_min_km} km</td></tr>
+        <tr><td class="label">Max Distanz:</td><td>${stats.distance_max_km} km</td></tr>
+        <tr><td class="label">Ø Distanz:</td><td>${stats.distance_avg_km} km</td></tr>
+        <tr><td class="label">Median:</td><td>${stats.distance_median_km} km</td></tr>
+      </table>
+
+      <br><b>Distanz-Buckets:</b>
+      <table>
+        ${Object.entries(stats.distance_buckets)
+          .map(([k,v]) => `<tr><td class="label">${k}:</td><td>${v}</td></tr>`)
+          .join("")}
+      </table>
+    `;
+
+    box.innerHTML = html;
+  })
+  .catch(() => { document.getElementById("stats").innerHTML="Keine Statistikdaten gefunden."; });
 
 </script>
 </body>
